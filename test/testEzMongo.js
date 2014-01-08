@@ -67,7 +67,7 @@ function _setUp (callback) {
         }],
         insert2: ['drop2', function(next, results) {
             async.each(Object.keys(testFixture.col2), function(key, eachNext) {
-                var obj = testFixture.col1[key];
+                var obj = testFixture.col2[key];
                 obj._id = key;
                 results.col2.insert(obj, eachNext);
             }, function(err) {
@@ -104,16 +104,16 @@ exports.testFindOne = function(test) {
 
     na.runTest(test, {
         useId: [function(next) {
-            EzMongo.findOne('col1', 'docB', ['num','char'], next);
+            ezMongo.findOne('col1', 'docB', ['num','char'], next);
         }],
         noFields: [function(next) {
-            EzMongo.findOne('col1', 'docB', next);
+            ezMongo.findOne('col1', 'docB', next);
         }],
         useObj: [function(next) {
-            EzMongo.findOne('col1', {char: 'A'}, ['num'], next);
+            ezMongo.findOne('col1', {char: 'A'}, ['num'], next);
         }],
         manyChoices: [function(next) {
-            EzMongo.findOne('col1', {num: {$gte: 2}}, ['char'], next);
+            ezMongo.findOne('col1', {num: {$gte: 2}}, ['char'], next);
         }],
         assertResults: ['useId','noFields','useObj','manyChoices',function(next, results) {
             test.equals(2, results.useId.num);
@@ -185,18 +185,19 @@ exports.testModifyOne = function(test) {
             ezMongo.modifyOne('col1','docB',{$set: {num: 4000}}, next);
         }],
         reloadDocB: ['useId', function(next) {
-            ezMongo.modifyOne('col1','docB', next);
+            ezMongo.findOne('col1','docB', next);
         }],
         useObject: [function(next) {
             ezMongo.modifyOne('col2',{num: 88},{$set: {char: 'A'}}, next);
         }],
         reloadDocY: ['useObject', function(next) {
-            ezMongo.modifyOne('col2','docY', next);
+            ezMongo.findOne('col2','docY', next);
         }],
         nonExistent: [function(next) {
             ezMongo.modifyOne('col1','bad_id',{$set: {char: 'A'}}, next);
         }],
         assertResults: ['reloadDocB','reloadDocY','nonExistent',function(next, results) {
+
             var docB = results.reloadDocB;
             var docY = results.reloadDocY;
 
@@ -217,19 +218,19 @@ exports.testModifyMultiple = function(test) {
 
     na.runTest(test, {
         useIds: [function(next) {
-            ezMongo.modifyOne('col1',['docA','docB'],{$set: {num: 4000}}, next);
+            ezMongo.modifyMultiple('col1',['docA','docB'],{$set: {num: 4000}}, next);
         }],
         reloadCol1: ['useIds', function(next) {
-            ezMongo.modifyOne('col1',{}, null, [['_id','asc']], next);
+            ezMongo.findMultiple('col1',{}, null, [['_id','asc']], next);
         }],
         useObject: [function(next) {
-            ezMongo.modifyOne('col2',{num: {$gte: 88}},{$set: {char: 'A'}}, next);
+            ezMongo.modifyMultiple('col2',{num: {$gte: 88}},{$set: {char: 'A'}}, next);
         }],
         reloadCol2: ['useObject', function(next) {
-            ezMongo.modifyOne('col2', {}, null, [['_id','asc']], next);
+            ezMongo.findMultiple('col2', {}, null, [['_id','asc']], next);
         }],
         nonExistent: [function(next) {
-            ezMongo.modifyOne('col2',{badField: 'notHere'},{$set: {char: 'A'}}, next);
+            ezMongo.modifyMultiple('col2',{badField: 'notHere'},{$set: {char: 'A'}}, next);
         }],
         assertResults: ['reloadCol1', 'reloadCol2', 'nonExistent', function(next, results) {
             var col1 = results.reloadCol1;
@@ -265,23 +266,23 @@ exports.testInsert = function(test) {
             ezMongo.insert('col1', soloData, next);
         }],
         reloadCol1: ['insertOne', function(next) {
-            ezMongo.insert('col1',{}, null, [['_id','asc']], next);
+            ezMongo.findMultiple('col1',{}, null, [['_id','asc']], next);
         }],
         insertMultiple: [function(next) {
             ezMongo.insert('col2', multiData, next);
         }],
         reloadCol2: ['insertMultiple', function(next) {
-            ezMongo.insert('col2', {}, null, [['_id','asc']], next);
+            ezMongo.findMultiple('col2', {}, null, [['_id','asc']], next);
         }],
         assertResults: ['reloadCol1','reloadCol2',function(next, results) {
             var col1 = results.reloadCol1;
             var col2 = results.reloadCol2;
 
-            test.equals(soloData._id, results.insertOne);
+            test.equal(soloData._id, results.insertOne);
             test.deepEqual(soloData, col1[3]);
 
-            test.deepEqual(multiData, results.insertMultiple);
-            test.equals(5, col2.length);
+            test.deepEqual(['docH', 'docI'], results.insertMultiple);
+            test.equal(5, col2.length);
             test.deepEqual(multiData[0], col2[0]);
             test.deepEqual(multiData[1], col2[1]);
 
