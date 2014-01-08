@@ -290,3 +290,81 @@ exports.testInsert = function(test) {
         }]
     });
 };
+
+exports.testRemoveOne = function(test) {
+
+    test.expect(7);
+
+    na.runTest(test, {
+        useId: [function(next) {
+            ezMongo.removeOne('col2', 'docX', next);
+        }],
+        useObj: [function(next) {
+            ezMongo.removeOne('col2', {char: 'Z'}, next);
+        }],
+        reloadCol2: ['useId', 'useObj', function(next) {
+            ezMongo.findMultiple('col2', {}, null, [['_id','asc']], next);
+        }],
+        manyChoices: ['reloadCol2', function(next) {
+            ezMongo.removeOne('col1', {num: {$gte: 2}}, next);
+        }],
+        reloadCol1: ['manyChoices', function(next) {
+            ezMongo.findMultiple('col1', {}, null, [['_id','asc']], next);
+        }],
+        assertResults: ['reloadCol2','reloadCol1',function(next, results) {
+
+            var col1 = results.reloadCol1;
+            var col2 = results.reloadCol2;
+
+            test.equals(1, results.useId);
+            test.equals(1, results.useObj);
+            test.equals(1, results.manyChoices);
+
+            test.equals(1, col2.length);
+            test.equals('docY', col2[0] && col2[0]._id);
+
+            test.equals(2, col1.length);
+            test.ok(col1.some(function(doc) {
+                return doc._id === 'docA';
+            }));
+
+            next();
+        }]
+    });
+};
+
+exports.testRemoveMultiple = function(test) {
+
+    test.expect(6);
+
+    na.runTest(test, {
+        useIds: [function(next) {
+            ezMongo.removeMultiple('col1', ['docA','docC'], next);
+        }],
+        reloadCol1: ['useIds', function(next) {
+            ezMongo.findMultiple('col1', {}, null, [['_id','asc']], next);
+        }],
+        useObj: [function(next) {
+            ezMongo.removeMultiple('col2', {num: {$lte: 90}}, next);
+        }],
+        reloadCol2: ['useObj', function(next) {
+            ezMongo.findMultiple('col2', {}, null, [['_id','asc']], next);
+        }],
+        assertResults: ['reloadCol1','reloadCol2',function(next, results) {
+
+            var col1 = results.reloadCol1;
+            var col2 = results.reloadCol2;
+
+            test.equals(2, results.useIds);
+            test.equals(2, results.useObj);
+
+            test.equals(1, col1.length);
+            test.equals('docB', col1[0] && col1[0]._id);
+
+            test.equals(1, col2.length);
+            test.equals('docZ', col2[0] && col2[0]._id);
+
+            next();
+        }]
+    });
+};
