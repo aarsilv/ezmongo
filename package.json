@@ -22,10 +22,9 @@
     "underscore": "~1.5.2"
   },
   "devDependencies": {
-    "nodeunit-async": "latest",
-    "nodeunit": "latest"
+    "nodeunit-async": "latest"
   },
-  "readme": "Easy and light weight interface wrapping the native node.js mongo driver",
+  "readme": "Easy and light weight interface wrapping the native node.js mongo driver.",
   "readmeFilename": "README.md",
   "homepage": "https://github.com/Zugwalt/ezmongo",
   "_id": "ezmongo@0.0.1",
