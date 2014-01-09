@@ -259,7 +259,7 @@ exports.testInsert = function(test) {
 
     var soloData = {_id: 'docF', num: 6, char: 'F'};
     var multiData =  [{_id: 'docH', num: -1, char: 'H'},
-        {_id: 'docI', num: -2, char: 'I'}];
+                      {_id: 'docI', num: -2, char: 'I'}];
 
     na.runTest(test, {
         insertOne: [function(next) {
