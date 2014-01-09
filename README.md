@@ -1,7 +1,13 @@
 ezmongo
 ==============
 
-Easy and light weight interface wrapping the [native node.js MongoDB driver](https://github.com/mongodb/node-mongodb-native).
+Easy and light weight interface wrapping the native node.js MongoDB driver, the [mongodb](https://github.com/mongodb/node-mongodb-native) module.
+
+Simple wrapper to use basic insert/find/modify/delete functions. Ability to access native collection and database objects for more advanced operations.
+
+By default uses [shortId](https://github.com/dylang/shortid) so that new objects have short strings as _ids instead of ObjectIDs.
+Also by default has protections in place to prevent accidentally clobbering an object on update.
+Optional ability to require the fields to retrieve for find() operations to be specified (good for performance!) and many other features as well!
 
 Provides the following functions:
 
@@ -23,10 +29,6 @@ Ability to enable/disable (good for maintenance mode)
 * [disable](#disable)
 * [enable](#enable)
 
-By default uses [shortId](https://github.com/dylang/shortid) so that new objects have short strings as _ids instead of ObjectIDs.
-Also by default has protections in place to prevent accidentally clobbering an object on update.
-Optional ability to require the fields to retrieve for find() operations to be specified (good for performance!)
-And many other features as well!
 
 Installation
 ============
@@ -36,42 +38,56 @@ Installation
 API
 =============
 
+<a name="constructor" />
 ## Constructor
 
 Constructs an EzMongo instance. The only required option is database, the rest have defaults.
 
-```EzMongo(options)```
+```javascript
+EzMongo(options)
+```
+
+Connection options:
 
 * **host** - hostname, or array of hostnames if using replica sets *(default: localhost)*
 * **port** - numerical port, or array of ports if using replica sets *(default: 27017)*
 * **database** - name of database to connect to *(required)*
 * **username** - user to connect as *(default: none)*
 * **password** - password for username *(default: none)*
-
 * **connectionOptions** - [options](http://mongodb.github.io/node-mongodb-native/driver-articles/mongoclient.html#mongoclient-connect-options) to pass to the underlying native driver when connecting *(default: none)*
 
-* **useShortId** - if true instead of ObjectIDs, use string [shortIds](https://github.com/dylang/shortid) when creating objects *(default: true)*
+Feature options:
 
+* **useShortId** - if true instead of ObjectIDs, use string [shortIds](https://github.com/dylang/shortid) when creating objects *(default: true)*
 * **lazyConnect** - if true, database will not try to connect until needed *(default: false)*
 * **disabled** - if true, database begins in a disabled state *(default: false)*
-
 * **safe_id** - if true, an error will be thrown if a $set or $unset operation attempts to modify the _id field *(default: true)*
 * **safeModify** - if true, an error will be thrown if any of the root level keys of the modification don't start with '$' *(default: true)*
 * **requireFields** - if true, an error will be thrown if a find operation is done without the fields to retrieve being specified *(default: false)*
+
+Logging options:
 
 * **logConnection** - output log statements about the connection *(default: true)*
 * **logPending** - output log statements about the status of pending operations *(default: false)*
 
 ```javascript
-var ezMongo = new EzMongo({database: 'ezMongoTestDb'});
+    var ezMongo = new EzMongo({database: 'ezMongoTestDb'});
+
+    // below will query as soon as DB is connected
+    ezMongo.findOne('myCollection', function(err, doc)) {
+        console.log('look what I found!',doc);
+    });
 ```
 
+<a name="findOne" />
 ## findOne
 
 Looks up a single document from a collection. Callback with the document if found, or null if not.
 If multiple documents match the search and no sort is provided, the document returned is non-deterministic and up to the database.
 
-```findOne(collectionName, _idOrSearch, fields, sort, callback)```
+```javascript
+findOne(collectionName, _idOrSearch, fields, sort, callback)
+```
 
 * *collectionName* - name of collection to search (required)
 * *_idOrSearch* - either the _id value, or the search object to be used for the find (default: {})
@@ -85,11 +101,14 @@ If multiple documents match the search and no sort is provided, the document ret
     });
 ```
 
+<a name="findMultiple" />
 ## findMultiple
 
 Looks up multiple documents from a collection. Callback with the array of found documents. If no documents are found the array will be empty.
 
-```findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)```
+```javascript
+findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
+```
 
 * **collectionName** - name of collection to search *(required)*
 * **_idsOrSearch** - either array of _ids, or the search object to be used for the find *(default: {})*
@@ -112,12 +131,15 @@ Looks up multiple documents from a collection. Callback with the array of found 
     });
 ```
 
+<a name="modifyOne" />
 ## modifyOne
 
 Modifies a single document. Callback with number of documents modified: 1 if a document modified, 0 if not.
 If multiple documents match the search, the one that will be modified is non-deterministic and up to the database.
 
-```modifyOne(collectionName, _idOrSearch, changes, callback)```
+```javascript
+modifyOne(collectionName, _idOrSearch, changes, callback)
+```
 
 * **collectionName** - name of collection to search for a document to modify *(required)*
 * **_idOrSearch** - either the _id value, or the search object to be used for the find *(required)*
@@ -134,11 +156,14 @@ If multiple documents match the search, the one that will be modified is non-det
     });
 ```
 
+<a name="modifyMultiple" />
 ## modifyMultiple
 
 Modifies multiple documents. Callback with number of documents modified.
 
-```modifyMultiple(collectionName, _idsOrSearch, changes, callback)```
+```javascript
+modifyMultiple(collectionName, _idsOrSearch, changes, callback)
+```
 
 * **collectionName** - name of collection to search for the documents to modify *(required)*
 * **_idsOrSearch** - either an array of _ids, or the search object to be used for the find *(required)*
@@ -151,12 +176,15 @@ Modifies multiple documents. Callback with number of documents modified.
     });
 ```
 
+<a name="removeOne" />
 ## removeOne
 
 Removes a single document. Callback with number of documents removed: 1 if removed, 0 if not.
 If multiple documents match the search, the one that will be removed is non-deterministic and up to the database.
 
-```removeOne(collectionName, _idOrSearch, callback)```
+```javascript
+removeOne(collectionName, _idOrSearch, callback)
+```
 
 * **collectionName** - name of collection to search for the document to remove *(required)*
 * **_idOrSearch** - either the _id of the document, or the search object to be used for the find *(required)*
@@ -172,11 +200,14 @@ If multiple documents match the search, the one that will be removed is non-dete
     });
 ```
 
+<a name="removeMultiple" />
 ## removeMultiple
 
 Removes multiple documents. Callback with number of documents removed.
 
-```removeMultiple(collectionName, _idsOrSearch, callback)```
+```javascript
+removeMultiple(collectionName, _idsOrSearch, callback)
+```
 
 * **collectionName** - name of collection to search for the documents to remove *(required)*
 * **_idsOrSearch** - either an array of _ids of the documents, or the search object to be used for the find *(required)*
@@ -192,6 +223,7 @@ Removes multiple documents. Callback with number of documents removed.
     });
 ```
 
+<a name="insert" />
 ## insert
 
 Inserts documents into the database.
@@ -199,7 +231,9 @@ If documents don't have an _id, one will be automatically generated either by us
 or if useShortId constructor option was false by the database.
 Callback with the _id, or array of _ids of the newly inserted documents.
 
-```insert(collectionName, docs, callback)```
+```javascript
+insert(collectionName, docs, callback)
+```
 
 * **collectionName** - name of collection to insert the documents into *(required)*
 * **docs** - either a single object or array of objects to insert as documents into the collection *(required)*
@@ -211,12 +245,15 @@ Callback with the _id, or array of _ids of the newly inserted documents.
     });
 ```
 
+<a name="collection" />
 ## collection
 
 Provides access to the native collection object for a collection.
 Callback with the native collection.
 
-```collection(collectionName, callback)```
+```javascript
+collection(collectionName, callback)
+```
 
 * **collectionName** name of the collection to access *(required)*
 * **callback** function called after collection is retrieved. First argument is any error encountered. Second argument is the native driver collection instance. *(required)*
@@ -229,12 +266,15 @@ Callback with the native collection.
     });
 ```
 
+<a name="db" />
 ## db
 
 Provides access to the native database object. Will attempt to connect.
 Callback with the native database.
 
-```db(callback)```
+```javascript
+db(callback)
+```
 
 * **callback** called after the database is connected. First argument is any error encountered. Second argument is the native driver database object. *(required)*
 
@@ -249,12 +289,15 @@ Callback with the native database.
     });
 ```
 
+<a name="disable" />
 ## disable
 
 Effectively disables the database as any subsequent EzMongo commands (other than enable/disable) will result in an error.
 Callback with whether or not the database was already disabled.
 
-```disable(callback)```
+```javascript
+disable(callback)
+```
 
 * **callback** if provided, called after database is disabled. First argument is any error encountered. Second argument is whether or not the database was already disabled. *(default: none)*
 
@@ -271,12 +314,15 @@ Callback with whether or not the database was already disabled.
     }):
 ```
 
+<a name="enable" />
 ## enable
 
 Effectively enables the database, with EzMongo commands executing as intended.
 Callback with whether or not the database was already enabled.
 
-```enable(callback)```
+```javascript
+enable(callback)
+```
 
 * **callback** if provided, called after database is enabled. First argument is any error encountered. Second argument is whether or not the database was already enabled. *(default: none)*
 
@@ -289,6 +335,10 @@ Callback with whether or not the database was already enabled.
         }
     });
 ```
+
+Further Development
+============
+The features are not yet inclusive. The [collection](#collection) and [db](#db) commands allow getting around this, however going forward additional features (e.g. count()) may be added as the needs arise.
 
 Testing
 ============
