@@ -64,6 +64,7 @@ Feature options:
 * **safe_id** - if true, an error will be thrown if a $set or $unset operation attempts to modify the _id field *(default: true)*
 * **safeModify** - if true, an error will be thrown if any of the root level keys of the modification don't start with '$' *(default: true)*
 * **requireFields** - if true, an error will be thrown if a find operation is done without the fields to retrieve being specified *(default: false)*
+* **mongodb** - optionally pass the mongodb module to wrap. *(default: latest 1.x module)*
 
 Logging options:
 
