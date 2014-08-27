@@ -1,5 +1,7 @@
 'use strict';
 
+require('longjohn');
+
 var async = require('async');
 var NodeunitAsync = require('nodeunit-async');
 var EzMongo = require('../index');
@@ -176,13 +178,13 @@ exports.testFindMultiple = function(test) {
     });
 };
 
-exports.testModifyOne = function(test) {
+exports.testUpdateOne = function(test) {
 
     test.expect(5);
 
     na.runTest(test, {
         useId: [function(next) {
-            ezMongo.modifyOne('col1','docB',{$set: {num: 4000}}, next);
+            ezMongo.updateOne('col1','docB',{$set: {num: 4000}}, next);
         }],
         reloadDocB: ['useId', function(next) {
             ezMongo.findOne('col1','docB', next);
@@ -194,7 +196,7 @@ exports.testModifyOne = function(test) {
             ezMongo.findOne('col2','docY', next);
         }],
         nonExistent: [function(next) {
-            ezMongo.modifyOne('col1','bad_id',{$set: {char: 'A'}}, next);
+            ezMongo.updateOne('col1','bad_id',{$set: {char: 'A'}}, next);
         }],
         assertResults: ['reloadDocB','reloadDocY','nonExistent',function(next, results) {
 
@@ -212,13 +214,13 @@ exports.testModifyOne = function(test) {
     });
 };
 
-exports.testModifyMultiple = function(test) {
+exports.testUpdateMultiple = function(test) {
 
     test.expect(9);
 
     na.runTest(test, {
         useIds: [function(next) {
-            ezMongo.modifyMultiple('col1',['docA','docB'],{$set: {num: 4000}}, next);
+            ezMongo.updateMultiple('col1',['docA','docB'],{$set: {num: 4000}}, next);
         }],
         reloadCol1: ['useIds', function(next) {
             ezMongo.findMultiple('col1',{}, null, [['_id','asc']], next);
@@ -230,7 +232,7 @@ exports.testModifyMultiple = function(test) {
             ezMongo.findMultiple('col2', {}, null, [['_id','asc']], next);
         }],
         nonExistent: [function(next) {
-            ezMongo.modifyMultiple('col2',{badField: 'notHere'},{$set: {char: 'A'}}, next);
+            ezMongo.updateMultiple('col2',{badField: 'notHere'},{$set: {char: 'A'}}, next);
         }],
         assertResults: ['reloadCol1', 'reloadCol2', 'nonExistent', function(next, results) {
             var col1 = results.reloadCol1;

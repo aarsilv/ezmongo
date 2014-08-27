@@ -13,8 +13,8 @@ Provides the following functions:
 
 * [findOne](#findOne)
 * [findMultiple](#findMultiple)
-* [modifyOne](#modifyOne)
-* [modifyMultiple](#modifyMultiple)
+* [updateOne](#updateOne)
+* [updateMultiple](#updateMultiple)
 * [removeOne](#removeOne)
 * [removeMultiple](#removeMultiple)
 * [insert](#insert)
@@ -132,14 +132,14 @@ findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
     });
 ```
 
-<a name="modifyOne" />
-## modifyOne
+<a name="updateOne" />
+## updateOne
 
-Modifies a single document. Callback with number of documents modified: 1 if a document modified, 0 if not.
+Updates a single document. Callback with number of documents modified: 1 if a document modified, 0 if not.
 If multiple documents match the search, the one that will be modified is non-deterministic and up to the database.
 
 ```javascript
-modifyOne(collectionName, _idOrSearch, changes, callback)
+updateOne(collectionName, _idOrSearch, changes, callback)
 ```
 
 * **collectionName** - name of collection to search for a document to modify *(required)*
@@ -148,7 +148,7 @@ modifyOne(collectionName, _idOrSearch, changes, callback)
 * **callback** - if specified, function called after the modification. First argument is any error encountered. Second argument is how many documents were modified. If not provided, modification will be done non-safe. *(default: none)*
 
 ```javascript
-    ezMongo.modifyOne('myCollection','_id1', {$set: {lastModified: new Date()}, $inc: {views: 1}}, function(err, success) {
+    ezMongo.updateOne('myCollection','_id1', {$set: {lastModified: new Date()}, $inc: {views: 1}}, function(err, success) {
         if (success) {
             console.log('document modified');
         } else {
@@ -157,13 +157,13 @@ modifyOne(collectionName, _idOrSearch, changes, callback)
     });
 ```
 
-<a name="modifyMultiple" />
-## modifyMultiple
+<a name="updateMultiple" />
+## updateMultiple
 
-Modifies multiple documents. Callback with number of documents modified.
+Updates multiple documents. Callback with number of documents modified.
 
 ```javascript
-modifyMultiple(collectionName, _idsOrSearch, changes, callback)
+updateMultiple(collectionName, _idsOrSearch, changes, callback)
 ```
 
 * **collectionName** - name of collection to search for the documents to modify *(required)*
@@ -172,7 +172,7 @@ modifyMultiple(collectionName, _idsOrSearch, changes, callback)
 * **callback** - if specified, function called after the modification. First argument is any error encountered. Second argument is how many documents were modified. If not provided, modification will be done non-safe. *(default: none)*
 
 ```javascript
-    ezMongo.modifyMultiple('myCollection','{powerLevel: {$gt: 9000}}', {$set: {state: 'awesome'}}, function(err, numModified) {
+    ezMongo.updateMultiple('myCollection','{powerLevel: {$gt: 9000}}', {$set: {state: 'awesome'}}, function(err, numModified) {
         console.log('Marked',numModified,'documents as awesome');
     });
 ```
