@@ -1,6 +1,6 @@
 {
   "name": "ezmongo",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "Aaron Silverman",
   "license": "MIT",
   "description": "Easy and light weight interface wrapping the native node.js mongo driver",
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "async": "0.x",
-    "mongodb": "~1.3.12",
+    "mongodb": "^1.4.9",
     "shortid": "~2.0.0",
     "underscore": "~1.5.2"
   },
