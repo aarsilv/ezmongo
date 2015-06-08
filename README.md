@@ -353,10 +353,9 @@ To run the tests, execute:
 
 This module is not yet fully covered by tests. Particularly the various constructor options. While uses in production also help tease out errors, expanded test coverage is a goal.
 
-Version 0.0.5 has been tested and works with node version 0.10.31, but does not work with 0.8.x because it uses a newer mongodb module. Version 0.0.4 uses older mongodb module and has been tested on 0.8.28.
+Version 0.0.6 has been tested and works with node version 0.12.4 and MongoDB 3.0.3. If you use older versions you may need an older version of ezmongo.
 
 Projects using EzMongo
 ============
-EzMongo is used for projects by the [Video Blocks](http://videoblocks.com) team. Unlimited downloads stock video, after effects templates, and more for one flat price.
-
 EzMongo was originally created for Node Knockout 2011 winner for Most Fun, [Doodle Or Die](http://doodleordie.com) and is still used today. Millions of hilarious doodles have been saved and accessed using EzMongo.
+EzMongo is also used for projects by the [Video Blocks](http://videoblocks.com) team. Unlimited downloads stock video, after effects templates, and more for one flat price.

@@ -1,6 +1,6 @@
 {
   "name": "ezmongo",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "author": "Aaron Silverman",
   "license": "MIT",
   "description": "Easy and light weight interface wrapping the native node.js mongo driver",
@@ -16,18 +16,17 @@
     "url": "git@github.com:Zugwalt/ezmongo.git"
   },
   "dependencies": {
-    "async": "0.x",
-    "mongodb": "^1.4.9",
-    "shortid": "~2.0.0",
-    "underscore": "~1.5.2"
+    "async": "^1.2.1",
+    "mongodb": "^2.0.33",
+    "shortid": "^2.2.2",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
-    "nodeunit-async": "latest",
-    "longjohn": "~0.2.4"
+    "nodeunit-async": "0.0.5"
   },
   "readme": "Easy and light weight interface wrapping the native node.js mongo driver.\n\nDocumentation and examples at [https://github.com/Zugwalt/ezmongo](https://github.com/Zugwalt/ezmongo)",
   "readmeFilename": "README.md",
   "homepage": "https://github.com/Zugwalt/ezmongo",
-  "_id": "ezmongo@0.0.2",
+  "_id": "ezmongo@0.0.6",
   "_from": "ezmongo@"
 }

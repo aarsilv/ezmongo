@@ -1,7 +1,5 @@
 'use strict';
 
-require('longjohn');
-
 var async = require('async');
 var NodeunitAsync = require('nodeunit-async');
 var EzMongo = require('../index');
@@ -27,51 +25,45 @@ var testFixture = {
 };
 
 function _setUp (callback) {
+
+    // reset col1 and col2 collections to the fixture
+
     async.auto({
         db: [function(next) {
             ezMongo.db(next);
         }],
-        list: ['db', function(next, results) {
-            results.db.collectionNames(next);
-        }],
-        col1: ['db', function(next, results) {
-            results.db.collection('col1', next);
-        }],
-        drop1: ['list','col1', function(next, results) {
-            if(results.list.some(function(colObj) {
-                return !!colObj.name.match(/\.col1$/);
-            })) {
-                results.col1.drop(next);
-            } else {
-                next();
-            }
-        }],
-        insert1: ['drop1', function(next, results) {
-            async.each(Object.keys(testFixture.col1), function(key, eachNext) {
-                var obj = testFixture.col1[key];
-                obj._id = key;
-                results.col1.insert(obj, eachNext);
+        ensureTestFixture: ['db', function(next, results) {
+            async.eachSeries(Object.keys(testFixture), function(fixtureCollectionName, eachNext) {
+                _ensureTestCollection(results.db, fixtureCollectionName, eachNext);
             }, function(err) {
                 next(err);
             });
+        }]
+    }, function(err) {
+        callback(err);
+    });
+}
+
+function _ensureTestCollection(db, fixtureCollectionName, callback) {
+    async.auto({
+        collection: [function(next) {
+            db.collection(fixtureCollectionName, next);
         }],
-        col2: ['db', function(next, results) {
-            results.db.collection('col2', next);
+        dropCollection: ['collection', function(next, results) {
+            results.collection.drop(function(err) {
+                if (err && err.message.match(/not found/i)) {
+                    // if collection doesn't exist that is ok
+                    err = null;
+                }
+                next(err);
+            });
         }],
-        drop2: ['list','col2', function(next, results) {
-            if(results.list.some(function(colObj) {
-                return !!colObj.name.match(/\.col2$/);
-            })) {
-                results.col2.drop(next);
-            } else {
-                next();
-            }
-        }],
-        insert2: ['drop2', function(next, results) {
-            async.each(Object.keys(testFixture.col2), function(key, eachNext) {
-                var obj = testFixture.col2[key];
-                obj._id = key;
-                results.col2.insert(obj, eachNext);
+        insertDocs: ['dropCollection', function(next, results) {
+            var fixtureDocs = testFixture[fixtureCollectionName];
+            async.each(Object.keys(fixtureDocs), function(key, eachNext) {
+                var docToInsert = fixtureDocs[key];
+                docToInsert._id = key;
+                results.collection.insert(docToInsert, eachNext);
             }, function(err) {
                 next(err);
             });
