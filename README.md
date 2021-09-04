@@ -11,14 +11,14 @@ Optional ability to require the fields to retrieve for find() operations to be s
 
 Provides the following functions:
 
-* [findOne](#findOne)
-* [findMultiple](#findMultiple)
-* [updateOne](#updateOne)
-* [updateMultiple](#updateMultiple)
-* [upsertOne](#upsertOne)
-* [upsertMultiple](#upsertMultiple)
-* [removeOne](#removeOne)
-* [removeMultiple](#removeMultiple)
+* [findOne](#findone)
+* [findMultiple](#findmultiple)
+* [updateOne](#updateone)
+* [updateMultiple](#updatemultiple)
+* [upsertOne](#upsertone)
+* [upsertMultiple](#upsertmultiple)
+* [removeOne](#removeone)
+* [removeMultiple](#removemultiple)
 * [insert](#insert)
 * [count](#count)
 
@@ -94,7 +94,7 @@ findOne(collectionName, _idOrSearch, fields, sort, callback)
 
 * *collectionName* - name of collection to search (required)
 * *_idOrSearch* - either the _id value, or the search object to be used for the find (default: {})
-* *fields* - array of fields of the document to retrieve, or null if find all fields (default: null)
+* *fields* - array or object with keys that have truthy values of the fields of the document to retrieve, or null if all fields are desired (default: null)
 * *sort* - array of fields and their sort order, or null if no sort (default: null)
 * *callback* - function called after the find. First argument is any error that was encountered. Second argument is the document if found, otherwise null.
 
@@ -114,7 +114,7 @@ findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
 
 * **collectionName** - name of collection to search *(required)*
 * **_idsOrSearch** - either array of _ids, or the search object to be used for the find *(default: {})*
-* **fields** - array of fields of the documents to retrieve, or null if find all fields *(default: null)*
+* **fields** - array or object with keys that have truthy values of the fields of the documents to retrieve, or null if find all fields *(default: null)*
 * **sort** - array of fields and their sort order, or null if no sort *(default: null)*
 * **limit** - limit to the number of documents to return, or null if no limit *(default: null)*
 * **skip** - how many documents to skip *(default: 0)*

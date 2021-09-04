@@ -91,11 +91,14 @@ exports.testCollection = function(test) {
 
 exports.testFindOne = function(test) {
 
-    test.expect(8);
+    test.expect(11);
 
     na.runTest(test, {
         useId: [function(next) {
             ezMongo.findOne('col1', 'docB', ['num','char'], next);
+        }],
+        objectFields: [next => {
+            ezMongo.findOne('col1', 'docB', {_id: 1, char: 0, num: true}, next);
         }],
         noFields: [function(next) {
             ezMongo.findOne('col1', 'docB', next);
@@ -106,9 +109,12 @@ exports.testFindOne = function(test) {
         manyChoices: [function(next) {
             ezMongo.findOne('col1', {num: {$gte: 2}}, ['char'], next);
         }],
-        assertResults: ['useId','noFields','useObj','manyChoices',function(next, results) {
+        assertResults: ['useId','objectFields','noFields','useObj','manyChoices',function(next, results) {
             test.equals(2, results.useId.num);
             test.equals('B', results.useId.char);
+            test.equals('docB', results.objectFields._id);
+            test.equals(2, results.objectFields.num);
+            test.ok(!results.objectFields.char);
             test.equals(2, results.noFields.num);
             test.equals('B', results.noFields.char);
             test.equals(1, results.useObj.num);
@@ -122,11 +128,14 @@ exports.testFindOne = function(test) {
 
 exports.testFindMultiple = function(test) {
 
-    test.expect(9);
+    test.expect(12);
 
     na.runTest(test, {
         useIds: [function(next) {
             ezMongo.findMultiple('col1', ['docA','docB'], ['num','char'], next);
+        }],
+        objectFields: [next => {
+            ezMongo.findMultiple('col1', ['docA','docB'], {_id: 1, char: 0, num: true}, next);
         }],
         useObj: [function(next) {
             ezMongo.findMultiple('col1', {num: {$gte: 2}}, ['num','char'], next);
@@ -140,7 +149,7 @@ exports.testFindMultiple = function(test) {
         skip: [function(next) {
             ezMongo.findMultiple('col1', ['docA','docB','docC'], ['char'], [['num','desc']], 2, 1, next);
         }],
-        assertResults: ['useIds','useObj','sort','limit','skip',function(next, results) {
+        assertResults: ['useIds','objectFields','useObj','sort','limit','skip',function(next, results) {
 
             test.equal(2, results.useIds.length);
             test.ok(results.useIds.some(function(el) {
@@ -148,6 +157,14 @@ exports.testFindMultiple = function(test) {
             }));
             test.ok(results.useIds.some(function(el) {
                 return el.num === 2 && el.char === 'B';
+            }));
+
+            test.equal(2, results.objectFields.length);
+            test.ok(results.objectFields.some(function(el) {
+                return el.num === 1 && el._id && !el.char;
+            }));
+            test.ok(results.objectFields.some(function(el) {
+                return el.num === 2 && el._id && !el.char;
             }));
 
             test.equal(2, results.useObj.length);
