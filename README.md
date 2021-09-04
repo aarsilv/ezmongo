@@ -38,7 +38,6 @@ Installation
 API
 =============
 
-<a name="constructor" />
 ## Constructor
 
 Constructs an EzMongo instance. The only required option is database, the rest have defaults.
@@ -80,7 +79,6 @@ Logging options:
     });
 ```
 
-<a name="findOne" />
 ## findOne
 
 Looks up a single document from a collection. Callback with the document if found, or null if not.
@@ -102,7 +100,6 @@ findOne(collectionName, _idOrSearch, fields, sort, callback)
     });
 ```
 
-<a name="findMultiple" />
 ## findMultiple
 
 Looks up multiple documents from a collection. Callback with the array of found documents. If no documents are found the array will be empty.
@@ -132,7 +129,6 @@ findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
     });
 ```
 
-<a name="updateOne" />
 ## updateOne
 
 Updates a single document. Callback with number of documents modified: 1 if a document modified, 0 if not.
@@ -157,7 +153,6 @@ updateOne(collectionName, _idOrSearch, changes, callback)
     });
 ```
 
-<a name="updateMultiple" />
 ## updateMultiple
 
 Updates multiple documents. Callback with number of documents modified.
@@ -177,7 +172,6 @@ updateMultiple(collectionName, _idsOrSearch, changes, callback)
     });
 ```
 
-<a name="removeOne" />
 ## removeOne
 
 Removes a single document. Callback with number of documents removed: 1 if removed, 0 if not.
@@ -201,7 +195,6 @@ removeOne(collectionName, _idOrSearch, callback)
     });
 ```
 
-<a name="removeMultiple" />
 ## removeMultiple
 
 Removes multiple documents. Callback with number of documents removed.
@@ -224,7 +217,6 @@ removeMultiple(collectionName, _idsOrSearch, callback)
     });
 ```
 
-<a name="insert" />
 ## insert
 
 Inserts documents into the database.
@@ -246,7 +238,6 @@ insert(collectionName, docs, callback)
     });
 ```
 
-<a name="collection" />
 ## collection
 
 Provides access to the native collection object for a collection.
@@ -267,7 +258,6 @@ collection(collectionName, callback)
     });
 ```
 
-<a name="db" />
 ## db
 
 Provides access to the native database object. Will attempt to connect.
@@ -290,7 +280,6 @@ db(callback)
     });
 ```
 
-<a name="disable" />
 ## disable
 
 Effectively disables the database as any subsequent EzMongo commands (other than enable/disable) will result in an error.
@@ -315,7 +304,6 @@ disable(callback)
     }):
 ```
 
-<a name="enable" />
 ## enable
 
 Effectively enables the database, with EzMongo commands executing as intended.
