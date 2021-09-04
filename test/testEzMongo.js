@@ -21,7 +21,8 @@ var testFixture = {
         docX: {num: 77, char: 'X'},
         docY: {num: 88, char: 'Y'},
         docZ: {num: 99, char: 'Z'}
-    }
+    },
+    col3: {}
 };
 
 function _setUp (callback) {
@@ -196,6 +197,62 @@ exports.testUpdateOne = function(test) {
             test.equals(1, results.useObject);
             test.equals('A', docY.char);
             test.equals(0, results.nonExistent);
+
+            next();
+        }]
+    });
+};
+
+exports.testUpsertOne = function(test) {
+
+    test.expect(12);
+
+    na.runTest(test, {
+        insertById: [next => {
+            ezMongo.upsertOne('col3','docQ',{$set: {num: 1234}}, next);
+        }],
+        loadDocQ: ['insertById', next => {
+            ezMongo.findOne('col3','docQ', next);
+        }],
+        upsertById: ['loadDocQ', next => {
+            ezMongo.upsertOne('col3','docQ',{$set: {num: 5678}}, next);
+        }],
+        reloadDocQ: ['upsertById', next => {
+            ezMongo.findOne('col3','docQ', next);
+        }],
+        insertByObject: [next => {
+            ezMongo.upsertOne('col3',{num: 8888},{$set: {char: 'R'}}, next);
+        }],
+        loadDoc8888: ['insertByObject', next => {
+            ezMongo.findOne('col3',{num: 8888}, next);
+        }],
+        upsertByObject: ['loadDoc8888', next => {
+            ezMongo.upsertOne('col3',{num: 8888},{$set: {char: 'S'}}, next);
+        }],
+        reloadDoc8888: ['upsertByObject', next => {
+            ezMongo.findOne('col3',{num: 8888}, next);
+        }],
+        assertResults: ['reloadDocQ','reloadDoc8888', function(next, results) {
+
+            const insertedQ = results.loadDocQ;
+            const upsertedQ = results.reloadDocQ;
+
+            test.equals(1, results.insertById);
+            test.equals('docQ', insertedQ._id);
+            test.equals(1234, insertedQ.num);
+            test.equals(1, results.upsertById);
+            test.equals('docQ', upsertedQ._id);
+            test.equals(5678, upsertedQ.num);
+
+            const inserted8888 = results.loadDoc8888;
+            const upserted8888 = results.reloadDoc8888;
+
+            test.equals(1, results.insertByObject);
+            test.equals(8888, inserted8888.num);
+            test.equals('R', inserted8888.char);
+            test.equals(1, results.upsertByObject);
+            test.equals(8888, upserted8888.num);
+            test.equals('S', upserted8888.char);
 
             next();
         }]
