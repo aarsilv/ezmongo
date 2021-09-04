@@ -53,7 +53,7 @@ async function _ensureTestCollection(db, fixtureCollectionName, callback) {
         const fixtureDocs = testFixture[fixtureCollectionName];
         for (const [id, props] of Object.entries(fixtureDocs)) {
             props._id = id;
-            await collection.insert(props);
+            await collection.insertOne(props);
         }
     } catch (err) {
         caughtErr = err;
