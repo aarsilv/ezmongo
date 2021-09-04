@@ -15,9 +15,12 @@ Provides the following functions:
 * [findMultiple](#findMultiple)
 * [updateOne](#updateOne)
 * [updateMultiple](#updateMultiple)
+* [upsertOne](#upsertOne)
+* [upsertMultiple](#upsertMultiple)
 * [removeOne](#removeOne)
 * [removeMultiple](#removeMultiple)
 * [insert](#insert)
+* [count](#count)
 
 As well as access to the native collection and database objects:
 
@@ -75,7 +78,7 @@ Logging options:
     var ezMongo = new EzMongo({database: 'ezMongoTestDb'});
 
     // below will query as soon as DB is connected
-    ezMongo.findOne('myCollection', function(err, doc)) {
+    ezMongo.findOne('myCollection', function(err, doc) {
         console.log('look what I found!',doc);
     });
 ```
@@ -118,7 +121,7 @@ findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
 * **callback** - function called after the find. First argument is any error that was encountered. Second argument is the array of zero or more found documents. *(required)*
 
 ```javascript
-    ezMongo.findMultiple('myCollection', {num: {$gte: 2}, ['field1'], [['rank','asc']], 10, 20, function(err, docs) {
+    ezMongo.findMultiple('myCollection', {num: {$gte: 2}}, ['field1'], [['rank','asc']], 10, 20, function(err, docs) {
         if (docs.length) {
             console.log('Found documents ranked 11 through', 10+docs.length); //most will be 11 through 30
             docs.forEach(function(doc) {
@@ -173,6 +176,50 @@ updateMultiple(collectionName, _idsOrSearch, changes, callback)
     });
 ```
 
+## upsertOne
+
+Upserts a single document. Updates it if found, otherwise inserts it. Callback with number of documents modified: 1 if 
+a document inserted or updated, 0 if not. If multiple documents match the search, the one that will be modified is non-deterministic and up to the database.
+
+```javascript
+updateOne(collectionName, _idOrSearch, changes, callback)
+```
+
+* **collectionName** - name of collection to search for a document to modify, inserting if not present *(required)*
+* **_idOrSearch** - either the _id value, or the search object to be used for the find or insert *(required)*
+* **changes** - the changes to make, immediately applied to search if inserted *(required)*
+* **callback** - if specified, function called after the modification. First argument is any error encountered. Second argument is how many documents were modified. If not provided, modification will be done non-safe. *(default: none)*
+
+```javascript
+    ezMongo.upsertOne('myCollection', {$num: 1}, {$set: {char: 'A'}}, function(err, numModified) {
+        if (numModified) {
+            console.log('document modified or inserted');
+        } else {
+            console.log('no modification needed');
+        }
+    });
+```
+
+## upsertMultiple
+
+Upserts multiple documents. Updates if any are found, otherwise inserts it. Callback with number of documents modified or 1 if
+a new document  was inserted. If multiple documents match the search, all will be updated.
+
+```javascript
+upsertMultiple(collectionName, _idsOrSearch, changes, callback)
+```
+
+* **collectionName** - name of collection to search for the documents to modify, inserting one if none are found *(required)*
+* **_idsOrSearch** - either an array of _ids, or the search object to be used for the find *(required)*
+* **changes** - the changes to make, immediately applied to search if inserted *(required)*
+* **callback** - if specified, function called after the modification. First argument is any error encountered. Second argument is how many documents were modified. If not provided, modification will be done non-safe. *(default: none)*
+
+```javascript
+    ezMongo.upsertMultiple('myCollection',{type: 'dog'}, {$set: {name: 'Sophie'}}, function(err, numModified) {
+        console.log('We now have',numModified,'dogs named Sophie');
+    });
+```
+
 ## removeOne
 
 Removes a single document. Callback with number of documents removed: 1 if removed, 0 if not.
@@ -220,7 +267,7 @@ removeMultiple(collectionName, _idsOrSearch, callback)
 
 ## insert
 
-Inserts documents into the database.
+Insert documents into the database.
 If documents don't have an _id, one will be automatically generated either by using [shortId](https://github.com/dylang/shortid),
 or if useShortId constructor option was false by the database.
 Callback with the _id, or array of _ids of the newly inserted documents.
@@ -238,6 +285,18 @@ insert(collectionName, docs, callback)
         console.log('Inserted new document has _id', _id);
     });
 ```
+
+## count
+
+Counts the number of documents in a collection that match the optionally provided search.
+
+```javascript
+count('myCollection', {age: {'$gte': 18}}, callback)
+```
+
+* **collectionName** - name of collection to count the documents *(required)*
+* **_idsOrSearch** - either an array of _ids, or the search object to be used for the find *(default: {})*
+* **callback** - function called with the resulting count. First argument is any error encountered. Second argument is how many documents were found. *(required)*
 
 ## collection
 

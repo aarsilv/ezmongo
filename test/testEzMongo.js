@@ -485,3 +485,32 @@ exports.testRemoveMultiple = function(test) {
         }]
     });
 };
+
+exports.testCount = function(test) {
+
+    test.expect(4);
+
+    na.runTest(test, {
+        noFilter: [next => {
+            ezMongo.count('col1', next);
+        }],
+        singleId: [next => {
+            ezMongo.count('col1', 'docA', next);
+        }],
+        manyIds: [function(next) {
+            ezMongo.count('col1', ['docA','docB'], next);
+        }],
+        obj: [function(next) {
+            ezMongo.count('col1', {num: {$gte: 2}}, next);
+        }],
+        assertResults: ['noFilter','singleId','manyIds','obj',function(next, results) {
+
+            test.equal(3, results.noFilter);
+            test.equal(1, results.singleId);
+            test.equal(2, results.manyIds);
+            test.equal(2, results.obj);
+
+            next();
+        }]
+    });
+};
