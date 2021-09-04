@@ -58,6 +58,7 @@ Connection options:
 Feature options:
 
 * **useShortId** - if true instead of ObjectIDs, use string [shortIds](https://github.com/dylang/shortid) when creating objects *(default: true)*
+* **useSRV** - if true a SRV connection string (e.g., mongodb+srv://) will be used instead of normal one (e.g., mongodb://) *(default: false)*
 * **lazyConnect** - if true, database will not try to connect until needed *(default: false)*
 * **disabled** - if true, database begins in a disabled state *(default: false)*
 * **safe_id** - if true, an error will be thrown if a $set or $unset operation attempts to modify the _id field *(default: true)*

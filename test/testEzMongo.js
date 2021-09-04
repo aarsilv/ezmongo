@@ -48,7 +48,15 @@ async function _ensureTestCollection(db, fixtureCollectionName, callback) {
     let caughtErr = null;
     try {
         const collection = await db.collection(fixtureCollectionName);
-        await collection.drop();
+        try {
+            await collection.drop();
+        } catch (err) {
+            if (err.message.match(/ns not found/)) {
+                /* ignore */
+            } else {
+                throw err;
+            }
+        }
 
         const fixtureDocs = testFixture[fixtureCollectionName];
         for (const [id, props] of Object.entries(fixtureDocs)) {
