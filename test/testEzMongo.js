@@ -44,33 +44,21 @@ function _setUp (callback) {
     });
 }
 
-function _ensureTestCollection(db, fixtureCollectionName, callback) {
-    async.auto({
-        collection: [function(next) {
-            db.collection(fixtureCollectionName, next);
-        }],
-        dropCollection: ['collection', function(next, results) {
-            results.collection.drop(function(err) {
-                if (err && err.message.match(/not found/i)) {
-                    // if collection doesn't exist that is ok
-                    err = null;
-                }
-                next(err);
-            });
-        }],
-        insertDocs: ['dropCollection', function(next, results) {
-            var fixtureDocs = testFixture[fixtureCollectionName];
-            async.each(Object.keys(fixtureDocs), function(key, eachNext) {
-                var docToInsert = fixtureDocs[key];
-                docToInsert._id = key;
-                results.collection.insert(docToInsert, eachNext);
-            }, function(err) {
-                next(err);
-            });
-        }]
-    }, function(err) {
-        callback(err);
-    });
+async function _ensureTestCollection(db, fixtureCollectionName, callback) {
+    let caughtErr = null;
+    try {
+        const collection = await db.collection(fixtureCollectionName);
+        await collection.drop();
+
+        const fixtureDocs = testFixture[fixtureCollectionName];
+        for (const [id, props] of Object.entries(fixtureDocs)) {
+            props._id = id;
+            await collection.insert(props);
+        }
+    } catch (err) {
+        caughtErr = err;
+    }
+    callback(caughtErr);
 }
 
 function _tearDown(callback) {
