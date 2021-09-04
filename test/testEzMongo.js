@@ -21,7 +21,8 @@ var testFixture = {
         docX: {num: 77, char: 'X'},
         docY: {num: 88, char: 'Y'},
         docZ: {num: 99, char: 'Z'}
-    }
+    },
+    col3: {}
 };
 
 function _setUp (callback) {
@@ -44,33 +45,29 @@ function _setUp (callback) {
     });
 }
 
-function _ensureTestCollection(db, fixtureCollectionName, callback) {
-    async.auto({
-        collection: [function(next) {
-            db.collection(fixtureCollectionName, next);
-        }],
-        dropCollection: ['collection', function(next, results) {
-            results.collection.drop(function(err) {
-                if (err && err.message.match(/not found/i)) {
-                    // if collection doesn't exist that is ok
-                    err = null;
-                }
-                next(err);
-            });
-        }],
-        insertDocs: ['dropCollection', function(next, results) {
-            var fixtureDocs = testFixture[fixtureCollectionName];
-            async.each(Object.keys(fixtureDocs), function(key, eachNext) {
-                var docToInsert = fixtureDocs[key];
-                docToInsert._id = key;
-                results.collection.insert(docToInsert, eachNext);
-            }, function(err) {
-                next(err);
-            });
-        }]
-    }, function(err) {
-        callback(err);
-    });
+async function _ensureTestCollection(db, fixtureCollectionName, callback) {
+    let caughtErr = null;
+    try {
+        const collection = await db.collection(fixtureCollectionName);
+        try {
+            await collection.drop();
+        } catch (err) {
+            if (err.message.match(/ns not found/)) {
+                /* ignore */
+            } else {
+                throw err;
+            }
+        }
+
+        const fixtureDocs = testFixture[fixtureCollectionName];
+        for (const [id, props] of Object.entries(fixtureDocs)) {
+            props._id = id;
+            await collection.insertOne(props);
+        }
+    } catch (err) {
+        caughtErr = err;
+    }
+    callback(caughtErr);
 }
 
 function _tearDown(callback) {
@@ -94,11 +91,14 @@ exports.testCollection = function(test) {
 
 exports.testFindOne = function(test) {
 
-    test.expect(8);
+    test.expect(11);
 
     na.runTest(test, {
         useId: [function(next) {
             ezMongo.findOne('col1', 'docB', ['num','char'], next);
+        }],
+        objectFields: [next => {
+            ezMongo.findOne('col1', 'docB', {_id: 1, char: 0, num: true}, next);
         }],
         noFields: [function(next) {
             ezMongo.findOne('col1', 'docB', next);
@@ -109,9 +109,12 @@ exports.testFindOne = function(test) {
         manyChoices: [function(next) {
             ezMongo.findOne('col1', {num: {$gte: 2}}, ['char'], next);
         }],
-        assertResults: ['useId','noFields','useObj','manyChoices',function(next, results) {
+        assertResults: ['useId','objectFields','noFields','useObj','manyChoices',function(next, results) {
             test.equals(2, results.useId.num);
             test.equals('B', results.useId.char);
+            test.equals('docB', results.objectFields._id);
+            test.equals(2, results.objectFields.num);
+            test.ok(!results.objectFields.char);
             test.equals(2, results.noFields.num);
             test.equals('B', results.noFields.char);
             test.equals(1, results.useObj.num);
@@ -125,11 +128,14 @@ exports.testFindOne = function(test) {
 
 exports.testFindMultiple = function(test) {
 
-    test.expect(9);
+    test.expect(12);
 
     na.runTest(test, {
         useIds: [function(next) {
             ezMongo.findMultiple('col1', ['docA','docB'], ['num','char'], next);
+        }],
+        objectFields: [next => {
+            ezMongo.findMultiple('col1', ['docA','docB'], {_id: 1, char: 0, num: true}, next);
         }],
         useObj: [function(next) {
             ezMongo.findMultiple('col1', {num: {$gte: 2}}, ['num','char'], next);
@@ -143,7 +149,7 @@ exports.testFindMultiple = function(test) {
         skip: [function(next) {
             ezMongo.findMultiple('col1', ['docA','docB','docC'], ['char'], [['num','desc']], 2, 1, next);
         }],
-        assertResults: ['useIds','useObj','sort','limit','skip',function(next, results) {
+        assertResults: ['useIds','objectFields','useObj','sort','limit','skip',function(next, results) {
 
             test.equal(2, results.useIds.length);
             test.ok(results.useIds.some(function(el) {
@@ -151,6 +157,14 @@ exports.testFindMultiple = function(test) {
             }));
             test.ok(results.useIds.some(function(el) {
                 return el.num === 2 && el.char === 'B';
+            }));
+
+            test.equal(2, results.objectFields.length);
+            test.ok(results.objectFields.some(function(el) {
+                return el.num === 1 && el._id && !el.char;
+            }));
+            test.ok(results.objectFields.some(function(el) {
+                return el.num === 2 && el._id && !el.char;
             }));
 
             test.equal(2, results.useObj.length);
@@ -246,6 +260,132 @@ exports.testUpdateMultiple = function(test) {
         }]
     });
 };
+
+exports.testUpsertOne = function(test) {
+
+    test.expect(16);
+
+    na.runTest(test, {
+        insertById: [next => {
+            ezMongo.upsertOne('col3','docQ',{$set: {num: 1234}}, next);
+        }],
+        loadDocQ: ['insertById', next => {
+            ezMongo.findOne('col3','docQ', next);
+        }],
+        upsertById: ['loadDocQ', next => {
+            ezMongo.upsertOne('col3','docQ',{$set: {num: 5678}}, next);
+        }],
+        reloadDocQ: ['upsertById', next => {
+            ezMongo.findOne('col3','docQ', next);
+        }],
+        insertByObject: [next => {
+            ezMongo.upsertOne('col3',{num: 8888},{$set: {char: 'R'}}, next);
+        }],
+        loadDoc8888: ['insertByObject', next => {
+            ezMongo.findOne('col3',{num: 8888}, next);
+        }],
+        upsertByObject: ['loadDoc8888', next => {
+            ezMongo.upsertOne('col3',{num: 8888},{$set: {char: 'S'}}, next);
+        }],
+        reloadDoc8888: ['upsertByObject', next => {
+            ezMongo.findOne('col3',{num: 8888}, next);
+        }],
+        assertResults: ['reloadDocQ','reloadDoc8888', function(next, results) {
+
+            const insertedQ = results.loadDocQ;
+            const upsertedQ = results.reloadDocQ;
+
+            test.equals(1, results.insertById);
+            test.ok(insertedQ._id);
+            test.equals('docQ', insertedQ._id);
+            test.equals(1234, insertedQ.num);
+            test.equals(1, results.upsertById);
+            test.ok(upsertedQ._id);
+            test.equals('docQ', upsertedQ._id);
+            test.equals(5678, upsertedQ.num);
+
+            const inserted8888 = results.loadDoc8888;
+            const upserted8888 = results.reloadDoc8888;
+
+            test.equals(1, results.insertByObject);
+            test.ok(inserted8888._id);
+            test.equals(8888, inserted8888.num);
+            test.equals('R', inserted8888.char);
+            test.equals(1, results.upsertByObject);
+            test.ok(upserted8888._id);
+            test.equals(8888, upserted8888.num);
+            test.equals('S', upserted8888.char);
+
+            next();
+        }]
+    });
+};
+
+exports.testUpsertMultiple = function(test) {
+
+    test.expect(20);
+
+    na.runTest(test, {
+        insertByObjectD: [next => {
+            ezMongo.upsertMultiple('col3',{num: 7777},{$set: {char: 'D'}}, next);
+        }],
+        loadFirstDoc: ['insertByObjectD', next => {
+            ezMongo.findOne('col3',{num: 7777}, next);
+        }],
+        insertByObjectE: ['loadFirstDoc', next => {
+            ezMongo.upsertMultiple('col3',{char: 'E'},{$set: {num: 7777}}, next);
+        }],
+        loadBothDocs: ['insertByObjectE', next => {
+            ezMongo.findMultiple('col3',{num: 7777}, next);
+        }],
+        upsertByObject: ['loadBothDocs', next => {
+            ezMongo.upsertMultiple('col3',{num: 7777},{$set: {char: 'F'}}, next);
+        }],
+        reloadBothDocs: ['upsertByObject', next => {
+            ezMongo.findMultiple('col3',{num: 7777}, next);
+        }],
+        assertResults: ['reloadBothDocs', function(next, results) {
+
+            const insertedD = results.loadFirstDoc;
+
+            test.equals(1, results.insertByObjectD);
+            test.ok(insertedD._id);
+            test.equals(7777, insertedD.num);
+            test.equals('D', insertedD.char);
+
+            const bothInserted = results.loadBothDocs;
+            bothInserted.sort((a,b) => a.char < b.char ? -1 : 1);
+            const leftAloneD = bothInserted[0];
+            const insertedE = bothInserted[1];
+
+            test.equals(1, results.insertByObjectE);
+            test.ok(leftAloneD._id);
+            test.equals(7777, leftAloneD.num);
+            test.equals('D', leftAloneD.char);
+            test.ok(insertedE._id);
+            test.equals(7777, insertedE.num);
+            test.equals('E', insertedE.char);
+            test.ok(leftAloneD._id !== insertedE._id);
+
+            const bothUpserted = results.loadBothDocs;
+            bothUpserted.sort((a,b) => a.char < b.char ? -1 : 1);
+            const uspertedD = bothInserted[0];
+            const uspertedE = bothInserted[1];
+
+            test.equals(2, results.upsertByObject);
+            test.ok(uspertedD._id);
+            test.equals(7777, uspertedD.num);
+            test.equals('D', uspertedD.char);
+            test.ok(uspertedE._id);
+            test.equals(7777, uspertedE.num);
+            test.equals('E', uspertedE.char);
+            test.ok(uspertedD._id !== insertedE._id);
+
+            next();
+        }]
+    });
+};
+
 
 exports.testInsert = function(test) {
 
@@ -357,6 +497,35 @@ exports.testRemoveMultiple = function(test) {
 
             test.equals(1, col2.length);
             test.equals('docZ', col2[0] && col2[0]._id);
+
+            next();
+        }]
+    });
+};
+
+exports.testCount = function(test) {
+
+    test.expect(4);
+
+    na.runTest(test, {
+        noFilter: [next => {
+            ezMongo.count('col1', next);
+        }],
+        singleId: [next => {
+            ezMongo.count('col1', 'docA', next);
+        }],
+        manyIds: [function(next) {
+            ezMongo.count('col1', ['docA','docB'], next);
+        }],
+        obj: [function(next) {
+            ezMongo.count('col1', {num: {$gte: 2}}, next);
+        }],
+        assertResults: ['noFilter','singleId','manyIds','obj',function(next, results) {
+
+            test.equal(3, results.noFilter);
+            test.equal(1, results.singleId);
+            test.equal(2, results.manyIds);
+            test.equal(2, results.obj);
 
             next();
         }]

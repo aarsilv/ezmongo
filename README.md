@@ -11,13 +11,16 @@ Optional ability to require the fields to retrieve for find() operations to be s
 
 Provides the following functions:
 
-* [findOne](#findOne)
-* [findMultiple](#findMultiple)
-* [updateOne](#updateOne)
-* [updateMultiple](#updateMultiple)
-* [removeOne](#removeOne)
-* [removeMultiple](#removeMultiple)
+* [findOne](#findone)
+* [findMultiple](#findmultiple)
+* [updateOne](#updateone)
+* [updateMultiple](#updatemultiple)
+* [upsertOne](#upsertone)
+* [upsertMultiple](#upsertmultiple)
+* [removeOne](#removeone)
+* [removeMultiple](#removemultiple)
 * [insert](#insert)
+* [count](#count)
 
 As well as access to the native collection and database objects:
 
@@ -38,7 +41,6 @@ Installation
 API
 =============
 
-<a name="constructor" />
 ## Constructor
 
 Constructs an EzMongo instance. The only required option is database, the rest have defaults.
@@ -59,6 +61,7 @@ Connection options:
 Feature options:
 
 * **useShortId** - if true instead of ObjectIDs, use string [shortIds](https://github.com/dylang/shortid) when creating objects *(default: true)*
+* **useSRV** - if true a SRV connection string (e.g., mongodb+srv://) will be used instead of normal one (e.g., mongodb://) *(default: false)*
 * **lazyConnect** - if true, database will not try to connect until needed *(default: false)*
 * **disabled** - if true, database begins in a disabled state *(default: false)*
 * **safe_id** - if true, an error will be thrown if a $set or $unset operation attempts to modify the _id field *(default: true)*
@@ -75,12 +78,11 @@ Logging options:
     var ezMongo = new EzMongo({database: 'ezMongoTestDb'});
 
     // below will query as soon as DB is connected
-    ezMongo.findOne('myCollection', function(err, doc)) {
+    ezMongo.findOne('myCollection', function(err, doc) {
         console.log('look what I found!',doc);
     });
 ```
 
-<a name="findOne" />
 ## findOne
 
 Looks up a single document from a collection. Callback with the document if found, or null if not.
@@ -92,7 +94,7 @@ findOne(collectionName, _idOrSearch, fields, sort, callback)
 
 * *collectionName* - name of collection to search (required)
 * *_idOrSearch* - either the _id value, or the search object to be used for the find (default: {})
-* *fields* - array of fields of the document to retrieve, or null if find all fields (default: null)
+* *fields* - array or object with keys that have truthy values of the fields of the document to retrieve, or null if all fields are desired (default: null)
 * *sort* - array of fields and their sort order, or null if no sort (default: null)
 * *callback* - function called after the find. First argument is any error that was encountered. Second argument is the document if found, otherwise null.
 
@@ -102,7 +104,6 @@ findOne(collectionName, _idOrSearch, fields, sort, callback)
     });
 ```
 
-<a name="findMultiple" />
 ## findMultiple
 
 Looks up multiple documents from a collection. Callback with the array of found documents. If no documents are found the array will be empty.
@@ -113,14 +114,14 @@ findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
 
 * **collectionName** - name of collection to search *(required)*
 * **_idsOrSearch** - either array of _ids, or the search object to be used for the find *(default: {})*
-* **fields** - array of fields of the documents to retrieve, or null if find all fields *(default: null)*
+* **fields** - array or object with keys that have truthy values of the fields of the documents to retrieve, or null if find all fields *(default: null)*
 * **sort** - array of fields and their sort order, or null if no sort *(default: null)*
 * **limit** - limit to the number of documents to return, or null if no limit *(default: null)*
 * **skip** - how many documents to skip *(default: 0)*
 * **callback** - function called after the find. First argument is any error that was encountered. Second argument is the array of zero or more found documents. *(required)*
 
 ```javascript
-    ezMongo.findMultiple('myCollection', {num: {$gte: 2}, ['field1'], [['rank','asc']], 10, 20, function(err, docs) {
+    ezMongo.findMultiple('myCollection', {num: {$gte: 2}}, ['field1'], [['rank','asc']], 10, 20, function(err, docs) {
         if (docs.length) {
             console.log('Found documents ranked 11 through', 10+docs.length); //most will be 11 through 30
             docs.forEach(function(doc) {
@@ -132,7 +133,6 @@ findMultiple(collectionName, _idsOrSearch, fields, sort, limit, skip, callback)
     });
 ```
 
-<a name="updateOne" />
 ## updateOne
 
 Updates a single document. Callback with number of documents modified: 1 if a document modified, 0 if not.
@@ -157,7 +157,6 @@ updateOne(collectionName, _idOrSearch, changes, callback)
     });
 ```
 
-<a name="updateMultiple" />
 ## updateMultiple
 
 Updates multiple documents. Callback with number of documents modified.
@@ -177,7 +176,50 @@ updateMultiple(collectionName, _idsOrSearch, changes, callback)
     });
 ```
 
-<a name="removeOne" />
+## upsertOne
+
+Upserts a single document. Updates it if found, otherwise inserts it. Callback with number of documents modified: 1 if 
+a document inserted or updated, 0 if not. If multiple documents match the search, the one that will be modified is non-deterministic and up to the database.
+
+```javascript
+updateOne(collectionName, _idOrSearch, changes, callback)
+```
+
+* **collectionName** - name of collection to search for a document to modify, inserting if not present *(required)*
+* **_idOrSearch** - either the _id value, or the search object to be used for the find or insert *(required)*
+* **changes** - the changes to make, immediately applied to search if inserted *(required)*
+* **callback** - if specified, function called after the modification. First argument is any error encountered. Second argument is how many documents were modified. If not provided, modification will be done non-safe. *(default: none)*
+
+```javascript
+    ezMongo.upsertOne('myCollection', {$num: 1}, {$set: {char: 'A'}}, function(err, numModified) {
+        if (numModified) {
+            console.log('document modified or inserted');
+        } else {
+            console.log('no modification needed');
+        }
+    });
+```
+
+## upsertMultiple
+
+Upserts multiple documents. Updates if any are found, otherwise inserts it. Callback with number of documents modified or 1 if
+a new document  was inserted. If multiple documents match the search, all will be updated.
+
+```javascript
+upsertMultiple(collectionName, _idsOrSearch, changes, callback)
+```
+
+* **collectionName** - name of collection to search for the documents to modify, inserting one if none are found *(required)*
+* **_idsOrSearch** - either an array of _ids, or the search object to be used for the find *(required)*
+* **changes** - the changes to make, immediately applied to search if inserted *(required)*
+* **callback** - if specified, function called after the modification. First argument is any error encountered. Second argument is how many documents were modified. If not provided, modification will be done non-safe. *(default: none)*
+
+```javascript
+    ezMongo.upsertMultiple('myCollection',{type: 'dog'}, {$set: {name: 'Sophie'}}, function(err, numModified) {
+        console.log('We now have',numModified,'dogs named Sophie');
+    });
+```
+
 ## removeOne
 
 Removes a single document. Callback with number of documents removed: 1 if removed, 0 if not.
@@ -201,7 +243,6 @@ removeOne(collectionName, _idOrSearch, callback)
     });
 ```
 
-<a name="removeMultiple" />
 ## removeMultiple
 
 Removes multiple documents. Callback with number of documents removed.
@@ -224,10 +265,9 @@ removeMultiple(collectionName, _idsOrSearch, callback)
     });
 ```
 
-<a name="insert" />
 ## insert
 
-Inserts documents into the database.
+Insert documents into the database.
 If documents don't have an _id, one will be automatically generated either by using [shortId](https://github.com/dylang/shortid),
 or if useShortId constructor option was false by the database.
 Callback with the _id, or array of _ids of the newly inserted documents.
@@ -246,7 +286,18 @@ insert(collectionName, docs, callback)
     });
 ```
 
-<a name="collection" />
+## count
+
+Counts the number of documents in a collection that match the optionally provided search.
+
+```javascript
+count('myCollection', {age: {'$gte': 18}}, callback)
+```
+
+* **collectionName** - name of collection to count the documents *(required)*
+* **_idsOrSearch** - either an array of _ids, or the search object to be used for the find *(default: {})*
+* **callback** - function called with the resulting count. First argument is any error encountered. Second argument is how many documents were found. *(required)*
+
 ## collection
 
 Provides access to the native collection object for a collection.
@@ -267,7 +318,6 @@ collection(collectionName, callback)
     });
 ```
 
-<a name="db" />
 ## db
 
 Provides access to the native database object. Will attempt to connect.
@@ -290,7 +340,6 @@ db(callback)
     });
 ```
 
-<a name="disable" />
 ## disable
 
 Effectively disables the database as any subsequent EzMongo commands (other than enable/disable) will result in an error.
@@ -315,7 +364,6 @@ disable(callback)
     }):
 ```
 
-<a name="enable" />
 ## enable
 
 Effectively enables the database, with EzMongo commands executing as intended.
